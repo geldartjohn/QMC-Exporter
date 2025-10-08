@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>QMC Exporter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app" data-app>
+      <header class="app__header">
+        <div>
+          <h1 class="app__title">QMC Exporter</h1>
+          <p class="app__subtitle">Export tables from the active Qlik Management Console tab.</p>
+        </div>
+        <button type="button" class="app__refresh" data-refresh>Refresh</button>
+      </header>
+
+      <section class="app__section app__section--status" data-status>
+        <span class="status__message">Scanning…</span>
+      </section>
+
+      <section class="app__section app__section--controls" data-controls hidden>
+
+        <label class="field">
+          <span class="field__label">Format</span>
+          <select class="field__control" data-format-select>
+            <option value="csv">CSV</option>
+            <option value="json">JSON</option>
+            <option value="xml">XML</option>
+          </select>
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" data-include-headers checked>
+          <span>Include headers</span>
+        </label>
+
+        <button type="button" class="app__export" data-export>Export</button>
+      </section>
+
+      <footer class="app__footer">
+        <span data-version>Version —</span>
+      </footer>
+    </main>
+
+    <script type="module" src="main.js"></script>
+  </body>
+</html>
