@@ -110,10 +110,33 @@
 }
 
 .app__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: 0.75rem;
   color: #5b6d7f;
   border-top: 1px solid rgba(18, 74, 126, 0.15);
   padding-top: 8px;
+}
+
+.app__footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #124a7e;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
+.app__footer-link:hover {
+  text-decoration: underline;
+}
+
+.app__footer-link img {
+  display: block;
+  width: 16px;
+  height: 16px;
 }
 
 .status__message--error {

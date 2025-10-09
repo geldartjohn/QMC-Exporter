@@ -11,7 +11,8 @@ const app = {
 
 const state = {
   activeTabId: null,
-  currentTable: null
+  currentTable: null,
+  injectedTabs: new Set()
 };
 
 init();
@@ -41,6 +42,7 @@ function wireEventHandlers() {
 }
 
 async function refreshTables() {
+  state.activeTabId = null;
   setStatus("Scanning active tab…");
   toggleControls(false);
 
@@ -51,6 +53,8 @@ async function refreshTables() {
       setStatus("No active tab detected.", true);
       return;
     }
+
+    await ensureContentInjected(tabId);
 
     const response = await sendMessage(tabId, { type: "QMC_EXPORTER_LIST_TABLES" });
     if (!response || !response.ok || !Array.isArray(response.tables) || !response.tables.length) {
@@ -73,6 +77,7 @@ async function refreshTables() {
 }
 
 async function handleExport() {
+  state.activeTabId = null;
   const table = state.currentTable;
   if (!table) {
     setStatus("No table available to export.", true);
@@ -92,6 +97,8 @@ async function handleExport() {
       toggleControls(true);
       return;
     }
+
+    await ensureContentInjected(tabId);
 
     const response = await sendMessage(tabId, {
       type: "QMC_EXPORTER_EXPORT_TABLE",
@@ -157,6 +164,7 @@ async function sendMessage(tabId, message) {
     if (chrome.runtime.lastError) {
       console.warn("QMC Exporter messaging warning", chrome.runtime.lastError);
     }
+    state.injectedTabs.delete(tabId);
     throw error;
   }
 }
@@ -179,4 +187,41 @@ async function triggerDownload(content, fileName, mimeType) {
   } finally {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
+}
+
+async function ensureContentInjected(tabId) {
+  try {
+    if (!state.injectedTabs.has(tabId)) {
+      await chrome.scripting.executeScript({
+        target: { tabId },
+        files: ["content-script.js"]
+      });
+      state.injectedTabs.add(tabId);
+    }
+    await confirmContentReady(tabId);
+  } catch (error) {
+    state.injectedTabs.delete(tabId);
+    throw error;
+  }
+}
+
+async function confirmContentReady(tabId, retries = 5) {
+  for (let attempt = 0; attempt < retries; attempt += 1) {
+    try {
+      const response = await chrome.tabs.sendMessage(tabId, { type: "QMC_EXPORTER_PING" });
+      if (response?.ok) {
+        return;
+      }
+    } catch (error) {
+      if (chrome.runtime.lastError) {
+        console.debug("Waiting for QMC exporter content script…", chrome.runtime.lastError);
+      }
+    }
+    await delay(100 * (attempt + 1));
+  }
+  throw new Error("CONTENT_NOT_READY");
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
