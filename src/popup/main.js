@@ -157,6 +157,7 @@ async function resolveActiveTabId() {
   return state.activeTabId;
 }
 
+
 async function sendMessage(tabId, message) {
   try {
     return await chrome.tabs.sendMessage(tabId, message);
