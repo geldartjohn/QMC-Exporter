@@ -35,7 +35,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           break;
         }
 
-        const dataset = extractDataset(descriptor.element, descriptor.type);
+        const dataset = extractDataset(descriptor.element);
         const payload = formatDataset(dataset, { format, includeHeaders });
         const fileName = createFileName(descriptor.nameHint, format);
 
@@ -55,7 +55,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         break;
     }
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.error("QMC Exporter content handler failed", error);
     sendResponse({ ok: false, error: "UNKNOWN_ERROR" });
   }
