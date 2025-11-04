@@ -1,19 +1,44 @@
 import { normalizeText, isNodeHidden, getDataRows } from "./dom-utils.js";
 
-export function extractDataset(element, type = "auto") {
-  if (!element) {
+export function extractDataset(element) {
+  if (!element || !(element instanceof HTMLTableElement)) {
     return { headers: [], rows: [] };
   }
 
-  const resolvedType = type === "auto" ? inferType(element) : type;
-  switch (resolvedType) {
-    case "html-table":
-      return extractHtmlTable(element);
-    case "aria-grid":
-      return extractAriaGrid(element);
-    default:
-      return { headers: [], rows: [] };
+  const headers = [];
+  const rows = [];
+
+  const headerRows = Array.from(element.tHead?.rows || []);
+  if (!headerRows.length) {
+    element.querySelectorAll("thead tr").forEach((row) => headerRows.push(row));
   }
+
+  for (const row of headerRows) {
+    const values = collectRowValues(row);
+    if (values.length) {
+      headers.push(...values);
+    }
+  }
+
+  const bodyRows = getDataRows(element);
+  for (const row of bodyRows) {
+    const values = collectRowValues(row);
+    if (values.length) {
+      rows.push(values);
+    }
+  }
+
+  if (!headers.length) {
+    const externalHeaderRow = findExternalHeaderRow(element);
+    if (externalHeaderRow) {
+      const externalValues = collectRowValues(externalHeaderRow);
+      if (externalValues.length) {
+        headers.push(...externalValues);
+      }
+    }
+  }
+
+  return finalizeDataset({ headers, rows });
 }
 
 export function summarizeDataset(dataset) {
@@ -35,25 +60,7 @@ export function deriveNameHint(element) {
     return "qmc-table";
   }
 
-  if (element.getAttribute) {
-    const ariaLabel = element.getAttribute("aria-label");
-    if (ariaLabel) {
-      return ariaLabel;
-    }
-
-    const labelledBy = element.getAttribute("aria-labelledby");
-    if (labelledBy) {
-      const labelNode = document.getElementById(labelledBy);
-      if (labelNode) {
-        const labelText = normalizeText(labelNode.textContent);
-        if (labelText) {
-          return labelText;
-        }
-      }
-    }
-  }
-
-  const caption = element.querySelector && element.querySelector("caption");
+  const caption = element.querySelector?.("caption");
   if (caption) {
     const captionText = normalizeText(caption.textContent);
     if (captionText) {
@@ -61,103 +68,7 @@ export function deriveNameHint(element) {
     }
   }
 
-  const region = element.closest && element.closest("[aria-label]");
-  if (region) {
-    const regionLabel = normalizeText(region.getAttribute("aria-label"));
-    if (regionLabel) {
-      return regionLabel;
-    }
-  }
-
   return normalizeText(document.title) || "qmc-table";
-}
-
-function inferType(element) {
-  if (element instanceof HTMLTableElement) {
-    return "html-table";
-  }
-  if (element.getAttribute && element.getAttribute("role") === "grid") {
-    return "aria-grid";
-  }
-  return "unknown";
-}
-
-function extractHtmlTable(table) {
-  const headers = [];
-  const rows = [];
-
-  const headerRows = Array.from(table.tHead?.rows || []);
-  if (!headerRows.length) {
-    table.querySelectorAll("thead tr").forEach((row) => headerRows.push(row));
-  }
-
-  for (const row of headerRows) {
-    const values = collectRowValues(row);
-    if (!values.length) {
-      continue;
-    }
-    headers.push(...values);
-  }
-
-  const bodyRows = getDataRows(table);
-  for (const row of bodyRows) {
-    const values = collectRowValues(row);
-    if (!values.length) {
-      continue;
-    }
-    rows.push(values);
-  }
-
-  if (!headers.length) {
-    const externalHeaderRow = findExternalHeaderRow(table);
-    if (externalHeaderRow) {
-      const externalValues = collectRowValues(externalHeaderRow);
-      if (externalValues.length) {
-        headers.push(...externalValues);
-      }
-    }
-  }
-
-  return finalizeDataset({ headers, rows });
-}
-
-function extractAriaGrid(grid) {
-  const headers = [];
-  const rows = [];
-  let headerCaptured = false;
-
-  const rowNodes = Array.from(grid.querySelectorAll('[role="row"]'));
-  for (const row of rowNodes) {
-    const headerCells = Array.from(row.querySelectorAll('[role="columnheader"]'));
-    const dataCells = Array.from(row.querySelectorAll('[role="gridcell"], [role="cell"]'));
-    const candidateCells =
-      headerCells.length && !dataCells.length ? headerCells : dataCells.length ? dataCells : headerCells;
-
-    if (!candidateCells.length) {
-      continue;
-    }
-
-    const values = candidateCells
-      .filter((cell) => !isNodeHidden(cell))
-      .map((cell) => normalizeText(cell.textContent));
-
-    if (!values.length) {
-      continue;
-    }
-
-    const isHeaderRow =
-      !headerCaptured && headerCells.length && (dataCells.length === 0 || row.getAttribute("role") === "rowheader");
-
-    if (isHeaderRow) {
-      headers.push(...values);
-      headerCaptured = true;
-      continue;
-    }
-
-      rows.push(values);
-  }
-
-  return finalizeDataset({ headers, rows });
 }
 
 function collectRowValues(row) {
@@ -182,7 +93,7 @@ function findExternalHeaderRow(table) {
   while (sibling) {
     if (sibling instanceof HTMLTableElement) {
       const headerCandidate = sibling.tHead?.rows?.[0] || sibling.querySelector("tr");
-      if (headerCandidate && headerCandidate.querySelector("th, [role='columnheader']")) {
+      if (headerCandidate?.querySelector("th")) {
         return headerCandidate;
       }
     }
@@ -227,7 +138,7 @@ function finalizeDataset(dataset) {
   if (!columnsToKeep.length) {
     return {
       headers: [],
-      rows: rows.map((row) => [])
+      rows: rows.map(() => [])
     };
   }
 
