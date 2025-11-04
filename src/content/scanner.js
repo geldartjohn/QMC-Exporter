@@ -23,12 +23,11 @@ export function listTables() {
 
   const summaries = [];
   for (const descriptor of registry.values()) {
-    const dataset = extractDataset(descriptor.element, descriptor.type);
+    const dataset = extractDataset(descriptor.element);
     descriptor.summary = summarizeDataset(dataset);
     summaries.push({
       id: descriptor.id,
       name: descriptor.nameHint,
-      type: descriptor.type,
       summary: descriptor.summary
     });
   }
@@ -45,7 +44,7 @@ export function refreshDescriptor(id) {
   if (!descriptor) {
     return null;
   }
-  const dataset = extractDataset(descriptor.element, descriptor.type);
+  const dataset = extractDataset(descriptor.element);
   descriptor.summary = summarizeDataset(dataset);
   return descriptor;
 }
@@ -56,21 +55,23 @@ function observeDocument() {
   }
 
   observer = new MutationObserver((mutations) => {
-    const touched = new Set();
+    const touchedTables = new Set();
+
     for (const mutation of mutations) {
       mutation.addedNodes.forEach((node) => {
         if (node instanceof Element || node instanceof DocumentFragment) {
           scanNode(node);
         }
       });
-      const targetTable = mutation.target && mutation.target.closest && mutation.target.closest("table, [role='grid']");
-      if (targetTable) {
-        touched.add(targetTable);
+
+      const table = mutation.target?.closest?.("table");
+      if (table) {
+        touchedTables.add(table);
       }
     }
 
-    touched.forEach((element) => {
-      const id = elementIds.get(element);
+    touchedTables.forEach((table) => {
+      const id = elementIds.get(table);
       if (id) {
         refreshDescriptor(id);
       }
@@ -83,28 +84,27 @@ function observeDocument() {
 function scanNode(root) {
   const scopes = collectScopes(root);
   for (const scope of scopes) {
-    const candidates = findCandidates(scope);
-    for (const candidate of candidates) {
-      registerCandidate(candidate);
+    const tables = findTables(scope);
+    for (const table of tables) {
+      registerTable(table);
     }
   }
 }
 
-function registerCandidate(candidate) {
-  const id = ensureElementId(candidate.element);
+function registerTable(table) {
+  const id = ensureElementId(table);
   const existing = registry.get(id);
+
   if (existing) {
-    existing.type = candidate.type;
-    existing.nameHint = candidate.nameHint;
+    existing.nameHint = deriveNameHint(table);
     refreshDescriptor(id);
     return;
   }
 
   const descriptor = {
     id,
-    element: candidate.element,
-    type: candidate.type,
-    nameHint: candidate.nameHint,
+    element: table,
+    nameHint: deriveNameHint(table),
     summary: { rowCount: 0, columnCount: 0, hasHeaders: false }
   };
 
@@ -139,35 +139,19 @@ function collectScopes(root) {
   return [];
 }
 
-function findCandidates(scope) {
+function findTables(scope) {
   const results = [];
 
   scope.querySelectorAll("table").forEach((table) => {
-    if (!looksLikeQmcTable(table)) {
-      return;
+    if (isQmcTable(table)) {
+      results.push(table);
     }
-    results.push({
-      element: table,
-      type: "html-table",
-      nameHint: deriveNameHint(table)
-    });
-  });
-
-  scope.querySelectorAll('[role="grid"]').forEach((grid) => {
-    if (!looksLikeQmcGrid(grid)) {
-      return;
-    }
-    results.push({
-      element: grid,
-      type: "aria-grid",
-      nameHint: deriveNameHint(grid)
-    });
   });
 
   return results;
 }
 
-function looksLikeQmcTable(table) {
+function isQmcTable(table) {
   if (!(table instanceof HTMLTableElement)) {
     return false;
   }
@@ -177,43 +161,17 @@ function looksLikeQmcTable(table) {
     return false;
   }
 
-  const dataCells = table.querySelectorAll("tbody td").length;
-  if (!dataCells) {
+  const dataCells = table.querySelectorAll("tbody td");
+  if (!dataCells.length) {
     return false;
   }
 
-  const className = (table.className || "").toLowerCase();
-  const ariaLabel = (table.getAttribute("aria-label") || "").toLowerCase();
-  if (className.includes("qmc") || className.includes("qlik") || ariaLabel.includes("qmc") || ariaLabel.includes("qlik")) {
+  const headers = table.querySelectorAll("thead th");
+  if (headers.length >= 1) {
     return true;
   }
 
-  const headerCells = table.querySelectorAll("thead th, thead [role='columnheader']").length;
-  if (headerCells >= 1) {
-    return true;
-  }
-
-  return true;
-}
-
-function looksLikeQmcGrid(grid) {
-  if (!(grid instanceof Element)) {
-    return false;
-  }
-
-  const headerCells = grid.querySelectorAll('[role="columnheader"]').length;
-  const dataCells = grid.querySelectorAll('[role="gridcell"], [role="cell"]').length;
-  if (!headerCells || !dataCells) {
-    return false;
-  }
-
-  const className = (grid.className || "").toLowerCase();
-  const ariaLabel = (grid.getAttribute("aria-label") || "").toLowerCase();
-  if (className.includes("qmc") || className.includes("qlik") || ariaLabel.includes("qmc") || ariaLabel.includes("qlik")) {
-    return true;
-  }
-
-  return headerCells >= 2;
+  return dataCells.length >= 3;
 }
 
 function pruneRegistry() {
@@ -223,18 +181,7 @@ function pruneRegistry() {
       continue;
     }
 
-    if (
-      descriptor.type === "html-table" &&
-      !looksLikeQmcTable(descriptor.element)
-    ) {
-      registry.delete(id);
-      continue;
-    }
-
-    if (
-      descriptor.type === "aria-grid" &&
-      !looksLikeQmcGrid(descriptor.element)
-    ) {
+    if (!isQmcTable(descriptor.element)) {
       registry.delete(id);
     }
   }

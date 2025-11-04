@@ -10,10 +10,6 @@ export function isNodeHidden(node) {
     return false;
   }
 
-  if (node.getAttribute("aria-hidden") === "true") {
-    return true;
-  }
-
   const style = window.getComputedStyle(node);
   if (style.display === "none" || style.visibility === "hidden") {
     return true;
