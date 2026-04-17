@@ -23,10 +23,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         sendResponse({ ok: Boolean(descriptor) });
         break;
       }
-      case "QMC_EXPORTER_PING": {
-        sendResponse({ ok: true });
-        break;
-      }
       case "QMC_EXPORTER_EXPORT_TABLE": {
         const { id, format, includeHeaders } = message.payload || {};
         const descriptor = getDescriptor(id);

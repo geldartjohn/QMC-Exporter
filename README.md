@@ -12,7 +12,7 @@ QMC Exporter is a Chrome extension that detects tables rendered in the Qlik Sens
 
 ## How it works
 
-1. **Content script loader** – `content-script.js` injects the ES-module content bundle only when the current path starts with `/qmc` or `/console`.
+1. **Content script loader** – `content-script.js` injects the ES-module content bundle on demand from the extension action, then relies on DOM scanning instead of URL heuristics.
 2. **DOM scanner** – `src/content/scanner.js` maintains a registry of eligible tables/grids, reacting to DOM mutations so virtualized QMC views stay in sync.
 3. **Dataset extraction** – `src/common/dataset.js` reconciles QMC header tables with body tables, normalizes text, and removes empty columns.
 4. **Formatters** – `src/common/formatters.js` serializes the dataset into CSV, JSON, or XML and creates a download-safe filename.

@@ -1,7 +1,7 @@
 {
   "name": "QMC Exporter",
   "description": "Detects Qlik Sense QMC tables and exports them as CSV, JSON, or XML directly from the extension action.",
-  "version": "0.2.0",
+  "version": "0.2.3",
   "manifest_version": 3,
   "action": {
     "default_title": "QMC Exporter",
@@ -33,7 +33,9 @@
         "src/content/main.js",
         "src/content/scanner.js"
       ],
-      "matches": ["<all_urls>"]
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ]
 }

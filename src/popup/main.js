@@ -206,19 +206,25 @@ async function ensureContentInjected(tabId) {
   }
 }
 
-async function confirmContentReady(tabId, retries = 5) {
+async function confirmContentReady(tabId, retries = 20) {
   for (let attempt = 0; attempt < retries; attempt += 1) {
     try {
       const response = await chrome.tabs.sendMessage(tabId, { type: "QMC_EXPORTER_PING" });
-      if (response?.ok) {
+      if (response?.ok && (!response.status || response.status === "ready")) {
         return;
+      }
+      if (response?.status === "error") {
+        throw new Error(response.error || "CONTENT_BOOTSTRAP_FAILED");
       }
     } catch (error) {
       if (chrome.runtime.lastError) {
         console.debug("Waiting for QMC exporter content script…", chrome.runtime.lastError);
       }
+      if (error?.message === "CONTENT_BOOTSTRAP_FAILED") {
+        throw error;
+      }
     }
-    await delay(100 * (attempt + 1));
+    await delay(Math.min(250 * (attempt + 1), 1000));
   }
   throw new Error("CONTENT_NOT_READY");
 }
