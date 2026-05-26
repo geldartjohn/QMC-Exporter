@@ -24,7 +24,7 @@
   } catch (error) {
     state.status = "error";
     state.error = error?.message || String(error);
-    console.error("Qlik Table Exporter failed to initialize", error);
+    console.error("Qlik Sense Cloud QMC Admin Table Export Tool failed to initialize", error);
   }
 
   function registerMessageListener() {
@@ -50,7 +50,7 @@
       handleMessage(message)
         .then((response) => sendResponse(response))
         .catch((error) => {
-          console.error("Qlik Table Exporter content handler failed", error);
+          console.error("Qlik Sense Cloud QMC Admin Table Export Tool content handler failed", error);
           sendResponse({ ok: false, error: error?.message || "UNKNOWN_ERROR" });
         });
       return true;

@@ -61,14 +61,14 @@ input {
 .app__title {
   margin: 0;
   color: var(--text);
-  font-size: 1.06rem;
+  font-size: 1rem;
   font-weight: 700;
   line-height: 1.25;
   letter-spacing: 0;
 }
 
 .app__subtitle {
-  max-width: 240px;
+  max-width: 250px;
   margin: 4px 0 0;
   color: var(--muted);
   font-size: 0.77rem;

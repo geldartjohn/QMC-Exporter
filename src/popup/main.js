@@ -217,7 +217,7 @@ async function sendMessage(tabId, message) {
     return await chrome.tabs.sendMessage(tabId, message);
   } catch (error) {
     if (chrome.runtime.lastError) {
-      console.warn("Qlik Table Exporter messaging warning", chrome.runtime.lastError);
+      console.warn("Qlik Sense Cloud QMC Admin Table Export Tool messaging warning", chrome.runtime.lastError);
     }
     state.injectedTabs.delete(tabId);
     throw error;
@@ -272,7 +272,7 @@ async function confirmContentReady(tabId, retries = 20) {
       }
     } catch (error) {
       if (chrome.runtime.lastError) {
-        console.debug("Waiting for Qlik Table Exporter content script...", chrome.runtime.lastError);
+        console.debug("Waiting for Qlik Sense Cloud QMC Admin Table Export Tool content script...", chrome.runtime.lastError);
       }
       if (error?.message === "CONTENT_BOOTSTRAP_FAILED") {
         throw error;

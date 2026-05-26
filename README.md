@@ -1,6 +1,6 @@
-# Qlik Table Exporter
+# Qlik Sense Cloud QMC Admin Table Export Tool
 
-Qlik Table Exporter is a Chromium extension that detects tables rendered in Qlik Sense and Qlik Cloud and lets you download their data on demand. The project is intentionally open source so Qlik admins can inspect, contribute, and tailor the exporter to their environment.
+Qlik Sense Cloud QMC Admin Table Export Tool is a Chromium extension that detects tables rendered in Qlik Sense, Qlik Cloud, QMC, and administration pages and lets you download their data on demand. The project is intentionally open source so Qlik admins can inspect, contribute, and tailor the exporter to their environment.
 
 ## Features
 
@@ -30,7 +30,7 @@ Qlik Table Exporter is a Chromium extension that detects tables rendered in Qlik
 ## Usage
 
 1. Navigate to a Qlik Sense or Qlik Cloud page with an exportable table.
-2. Click the Qlik Table Exporter action icon. The popup reports the detected table and lets you choose format, row scope, and header inclusion.
+2. Click the Qlik Sense Cloud QMC Admin Table Export Tool action icon. The popup reports the detected table and lets you choose format, row scope, and header inclusion.
 3. Press **Refresh** if the table changed, then **Export** to download the file.
 
 ## Roadmap ideas
