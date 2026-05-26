@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Qlik Cloud Administration Fixture</title>
+  </head>
+  <body>
+    <main>
+      <h1>Administration</h1>
+      <section data-page="1">
+        <table class="MuiTable-root">
+          <thead>
+            <tr>
+              <th><input type="checkbox" aria-label="Select all"></th>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Owner</th>
+              <th>Date created</th>
+              <th>Allow large apps</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><input type="checkbox" aria-label="Select Alpha"></td>
+              <td>Alpha</td>
+              <td><svg aria-label="Managed space"></svg><span>Managed</span></td>
+              <td>
+                <span data-testid="avatar-table-cell">
+                  <span data-testid="common-avatar-container">AA</span>
+                  <span aria-label="owner.alpha@example.test">owner.alpha@example.test</span>
+                </span>
+              </td>
+              <td>01/01/2026</td>
+              <td>No</td>
+              <td><button data-testid="action-cell__button" aria-label="Actions">...</button></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" aria-label="Select Beta"></td>
+              <td>Beta</td>
+              <td><svg aria-label="Shared space"></svg><span>Shared</span></td>
+              <td>
+                <span data-testid="avatar-table-cell">
+                  <span data-testid="common-avatar-container">BB</span>
+                  <span aria-label="owner.beta@example.test">owner.beta@example.test</span>
+                </span>
+              </td>
+              <td>01/02/2026</td>
+              <td>Yes</td>
+              <td><button data-testid="action-cell__button" aria-label="Actions">...</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="MuiTablePagination-root" data-testid="table-pagination">
+          <p>Rows per page:</p>
+          <div class="MuiTablePagination-input">
+            <input class="MuiSelect-nativeInput" value="2" aria-hidden="true">
+          </div>
+          <p class="MuiTablePagination-displayedRows">1-2 of 4</p>
+          <button type="button" disabled aria-label="Go to previous page" title="Previous page">Previous</button>
+          <button type="button" aria-label="Go to next page" title="Next page">Next</button>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

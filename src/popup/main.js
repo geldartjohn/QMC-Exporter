@@ -3,6 +3,7 @@ const app = {
   statusMessage: document.querySelector("[data-status] .status__message") || document.querySelector("[data-status]"),
   controls: document.querySelector("[data-controls]"),
   formatSelect: document.querySelector("[data-format-select]"),
+  scopeSelect: document.querySelector("[data-scope-select]"),
   includeHeaders: document.querySelector("[data-include-headers]"),
   exportButton: document.querySelector("[data-export]"),
   refreshButton: document.querySelector("[data-refresh]"),
@@ -12,7 +13,8 @@ const app = {
 const state = {
   activeTabId: null,
   currentTable: null,
-  injectedTabs: new Set()
+  injectedTabs: new Set(),
+  exporting: false
 };
 
 init();
@@ -39,6 +41,17 @@ function wireEventHandlers() {
   if (app.exportButton) {
     app.exportButton.addEventListener("click", () => handleExport());
   }
+
+  chrome.runtime.onMessage.addListener((message) => {
+    if (!state.exporting || message?.type !== "QMC_EXPORTER_EXPORT_PROGRESS") {
+      return;
+    }
+
+    const { page, pages, rows, expectedRows } = message.payload || {};
+    const pageLabel = pages ? `page ${page} of ${pages}` : `page ${page}`;
+    const rowLabel = expectedRows ? `${rows}/${expectedRows} rows` : `${rows} rows`;
+    setStatus(`Exporting ${pageLabel} (${rowLabel})... Keep this popup open.`);
+  });
 }
 
 async function refreshTables() {
@@ -59,7 +72,7 @@ async function refreshTables() {
     const response = await sendMessage(tabId, { type: "QMC_EXPORTER_LIST_TABLES" });
     if (!response || !response.ok || !Array.isArray(response.tables) || !response.tables.length) {
       state.currentTable = null;
-      setStatus("No QMC tables detected on this page.", true);
+      setStatus("No Qlik tables detected on this page.", true);
       return;
     }
 
@@ -67,12 +80,23 @@ async function refreshTables() {
     state.currentTable = firstTable;
     const rowCount = firstTable.summary?.rowCount ?? 0;
     const columnCount = firstTable.summary?.columnCount ?? 0;
-    setStatus(`Ready to export ${firstTable.name || "the detected table"} (${rowCount}×${columnCount}).`);
+    configureScopeSelect(firstTable);
+
+    const pagination = firstTable.pagination || {};
+    const totalRows = pagination.totalRows;
+    const pageRows = pagination.currentStart && pagination.currentEnd
+      ? `${pagination.currentStart}-${pagination.currentEnd}`
+      : rowCount;
+    const rowSummary = firstTable.isPaginated && totalRows
+      ? `${pageRows} of ${totalRows} rows`
+      : `${rowCount} rows`;
+
+    setStatus(`Ready to export ${firstTable.name || "the detected table"} (${rowSummary}, ${columnCount} columns).`);
     toggleControls(true);
   } catch (error) {
     console.error("Failed to refresh tables", error);
     state.currentTable = null;
-    setStatus("Unable to communicate with the page. Ensure it is a QMC tab.", true);
+    setStatus("Unable to communicate with the page. Ensure it is a Qlik Sense or Qlik Cloud tab.", true);
   }
 }
 
@@ -86,9 +110,15 @@ async function handleExport() {
 
   const format = app.formatSelect?.value || "csv";
   const includeHeaders = Boolean(app.includeHeaders?.checked);
+  const scope = app.scopeSelect?.value || "visible";
 
-  setStatus("Preparing export…");
-  toggleControls(false);
+  const scopeMessage = scope === "allPages" ? "Preparing full-table export..." : "Preparing export...";
+  state.exporting = true;
+  setStatus(scopeMessage);
+  setControlsEnabled(false);
+  if (app.refreshButton) {
+    app.refreshButton.disabled = true;
+  }
 
   try {
     const tabId = await resolveActiveTabId();
@@ -102,7 +132,7 @@ async function handleExport() {
 
     const response = await sendMessage(tabId, {
       type: "QMC_EXPORTER_EXPORT_TABLE",
-      payload: { id: table.id, format, includeHeaders }
+      payload: { id: table.id, format, includeHeaders, scope }
     });
 
     if (!response || !response.ok) {
@@ -116,13 +146,31 @@ async function handleExport() {
     const exportedMessage = exportedRows
       ? `Exported ${exportedRows} ${exportedRows === 1 ? "row" : "rows"}`
       : "Exported headers only";
-    setStatus(`${exportedMessage} as ${format.toUpperCase()}.`);
+    const warning = response.meta?.partial ? " Partial export: pagination stopped before the expected total." : "";
+    setStatus(`${exportedMessage} as ${format.toUpperCase()}.${warning}`, response.meta?.partial);
   } catch (error) {
     console.error("Export failed", error);
     setStatus("Export failed. Check console for details.", true);
   } finally {
+    state.exporting = false;
+    if (app.refreshButton) {
+      app.refreshButton.disabled = false;
+    }
     toggleControls(Boolean(state.currentTable));
   }
+}
+
+function configureScopeSelect(table) {
+  if (!app.scopeSelect) {
+    return;
+  }
+
+  const fullTableOption = Array.from(app.scopeSelect.options).find((option) => option.value === "allPages");
+  if (fullTableOption) {
+    fullTableOption.disabled = !table.supportsFullExport;
+  }
+
+  app.scopeSelect.value = table.supportsFullExport ? "allPages" : "visible";
 }
 
 function setStatus(message, isError = false) {
@@ -141,9 +189,15 @@ function toggleControls(enabled) {
   }
 
   app.controls.hidden = !enabled;
-  if (app.exportButton) {
-    app.exportButton.disabled = !enabled;
-  }
+  setControlsEnabled(enabled);
+}
+
+function setControlsEnabled(enabled) {
+  [app.formatSelect, app.scopeSelect, app.includeHeaders, app.exportButton]
+    .filter(Boolean)
+    .forEach((control) => {
+      control.disabled = !enabled;
+    });
 }
 
 async function resolveActiveTabId() {
@@ -163,7 +217,7 @@ async function sendMessage(tabId, message) {
     return await chrome.tabs.sendMessage(tabId, message);
   } catch (error) {
     if (chrome.runtime.lastError) {
-      console.warn("QMC Exporter messaging warning", chrome.runtime.lastError);
+      console.warn("Qlik Table Exporter messaging warning", chrome.runtime.lastError);
     }
     state.injectedTabs.delete(tabId);
     throw error;
@@ -218,7 +272,7 @@ async function confirmContentReady(tabId, retries = 20) {
       }
     } catch (error) {
       if (chrome.runtime.lastError) {
-        console.debug("Waiting for QMC exporter content script…", chrome.runtime.lastError);
+        console.debug("Waiting for Qlik Table Exporter content script...", chrome.runtime.lastError);
       }
       if (error?.message === "CONTENT_BOOTSTRAP_FAILED") {
         throw error;

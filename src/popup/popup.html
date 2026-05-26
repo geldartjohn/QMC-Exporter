@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>QMC Exporter</title>
+    <title>Qlik Table Exporter</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="styles.css">
   </head>
@@ -10,8 +10,9 @@
     <main class="app" data-app>
       <header class="app__header">
         <div>
-          <h1 class="app__title">QMC Exporter</h1>
-          <p class="app__subtitle">Export tables from the active Qlik Management Console tab.</p>
+          <span class="app__eyebrow">Qlik Sense + Cloud</span>
+          <h1 class="app__title">Table Exporter</h1>
+          <p class="app__subtitle">Export the visible page or full paginated table from the active Qlik tab.</p>
         </div>
         <button type="button" class="app__refresh" data-refresh>Refresh</button>
       </header>
@@ -22,14 +23,24 @@
 
       <section class="app__section app__section--controls" data-controls hidden>
 
-        <label class="field">
-          <span class="field__label">Format</span>
-          <select class="field__control" data-format-select>
-            <option value="csv">CSV</option>
-            <option value="json">JSON</option>
-            <option value="xml">XML</option>
-          </select>
-        </label>
+        <div class="field-grid">
+          <label class="field">
+            <span class="field__label">Format</span>
+            <select class="field__control" data-format-select>
+              <option value="csv">CSV</option>
+              <option value="json">JSON</option>
+              <option value="xml">XML</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="field__label">Rows</span>
+            <select class="field__control" data-scope-select>
+              <option value="visible">Visible page</option>
+              <option value="allPages">Full table</option>
+            </select>
+          </label>
+        </div>
 
         <label class="checkbox">
           <input type="checkbox" data-include-headers checked>
