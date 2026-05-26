@@ -2,6 +2,16 @@
 
 Qlik Sense Cloud QMC Admin Table Export Tool is a Chromium extension that detects tables rendered in Qlik Sense, Qlik Cloud, QMC, and administration pages and lets you download their data on demand. The project is intentionally open source so Qlik admins can inspect, contribute, and tailor the exporter to their environment.
 
+## Store description
+
+Qlik Sense Cloud QMC Admin Table Export Tool helps Qlik administrators and developers export table data from Qlik Sense, Qlik Cloud, QMC, and administration pages directly from the browser.
+
+The extension detects compatible Qlik table views in the active tab and exports data as CSV, JSON, or XML. It supports both visible-page exports and full-table exports for paginated Qlik Cloud administration tables by paging through the current filtered and sorted view. This is useful when reviewing users, spaces, apps, permissions, monitoring views, or other administrative table data that Qlik displays across multiple pages.
+
+The extension runs locally in the browser, uses standard Manifest V3 extension APIs, and does not require a backend service or tenant API credentials. It is designed for Qlik Sense and Qlik Cloud administrators who need quick, inspectable exports from the table currently shown in the browser.
+
+This package is open source and the GitHub repository is available at: https://github.com/geldartjohn/QMC-Exporter
+
 ## Features
 
 - **Automatic table discovery**: A lightweight content script observes the active Qlik view and records any table/grid components it encounters.

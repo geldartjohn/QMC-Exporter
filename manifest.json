@@ -1,6 +1,6 @@
 {
   "name": "Qlik Sense Cloud QMC Admin Table Export Tool",
-  "description": "Detects Qlik Sense and Qlik Cloud tables and exports visible or paginated data as CSV, JSON, or XML.",
+  "description": "Exports Qlik Sense, Qlik Cloud, QMC, and admin tables to CSV, JSON, or XML, including paginated full-table exports.",
   "version": "0.3.0",
   "manifest_version": 3,
   "action": {
